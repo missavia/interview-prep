@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Prep</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3e;
+      --accent: #6c63ff;
+      --accent-hover: #7c74ff;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --radius: 12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { color: var(--muted); margin-top: 6px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    /* ── Category picker ── */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .cat-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      cursor: pointer;
+      color: var(--text);
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .cat-btn:hover { border-color: var(--accent); }
+    .cat-btn.active { border-color: var(--accent); background: rgba(108,99,255,.15); }
+    .cat-btn .icon { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+    .cat-btn .label { font-size: 0.85rem; font-weight: 600; }
+    .cat-btn .sub { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Buttons ── */
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      width: 100%;
+    }
+    .btn:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover:not(:disabled) { border-color: var(--accent); background: rgba(108,99,255,.1); }
+
+    /* ── Session view ── */
+    #session { display: none; }
+
+    .session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .session-header .badge {
+      background: rgba(108,99,255,.2);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .session-header .q-count { color: var(--muted); font-size: 0.85rem; }
+
+    .question-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      min-height: 60px;
+    }
+    .question-box.loading { color: var(--muted); font-style: italic; }
+
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      resize: vertical;
+      min-height: 140px;
+      margin-bottom: 16px;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    /* ── Feedback ── */
+    #feedback { display: none; margin-top: 24px; }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .score-circle {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .score-label { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    .fb-section { margin-bottom: 16px; }
+    .fb-section h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .fb-section h4.green { color: var(--green); }
+    .fb-section h4.yellow { color: var(--yellow); }
+    .fb-section h4.purple { color: var(--accent); }
+
+    .fb-section ul { list-style: none; }
+    .fb-section ul li {
+      padding: 6px 0 6px 14px;
+      position: relative;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #c8d0dc;
+      border-bottom: 1px solid var(--border);
+    }
+    .fb-section ul li:last-child { border-bottom: none; }
+    .fb-section ul li::before {
+      content: "–";
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+    }
+    .ideal-answer {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #c8d0dc;
+    }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      background: rgba(248,113,113,.1);
+      border: 1px solid rgba(248,113,113,.3);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--red);
+      font-size: 0.875rem;
+      margin-top: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Interview Prep</h1>
+  <p>AI-powered practice for every interview type</p>
+</header>
+
+<!-- Home: category picker -->
+<div class="card" id="home">
+  <div class="category-grid">
+    <button class="cat-btn active" data-cat="behavioral" onclick="selectCat(this)">
+      <span class="icon">💬</span>
+      <span class="label">Behavioral</span>
+      <span class="sub">STAR method</span>
+    </button>
+    <button class="cat-btn" data-cat="technical" onclick="selectCat(this)">
+      <span class="icon">💻</span>
+      <span class="label">Technical</span>
+      <span class="sub">Coding & Design</span>
+    </button>
+    <button class="cat-btn" data-cat="role" onclick="selectCat(this)">
+      <span class="icon">📋</span>
+      <span class="label">Role-Specific</span>
+      <span class="sub">PM / Design</span>
+    </button>
+  </div>
+  <button class="btn" onclick="startSession()">Start Session</button>
+  <div class="error-msg" id="home-error"></div>
+</div>
+
+<!-- Session -->
+<div class="card" id="session">
+  <div class="session-header">
+    <span class="badge" id="cat-badge">Behavioral</span>
+    <span class="q-count" id="q-count">Question 1</span>
+  </div>
+
+  <div class="question-box loading" id="question-box">Loading question…</div>
+
+  <textarea id="answer" placeholder="Type your answer here…" rows="6"></textarea>
+
+  <button class="btn" id="submit-btn" onclick="submitAnswer()" disabled>Submit Answer</button>
+  <div class="error-msg" id="session-error"></div>
+
+  <!-- Feedback -->
+  <div id="feedback">
+    <hr style="border-color:var(--border);margin:24px 0 20px">
+
+    <div class="score-row">
+      <div class="score-circle" id="score-circle">—</div>
+      <div>
+        <div style="font-weight:600;font-size:1rem">Score</div>
+        <div class="score-label">out of 10</div>
+      </div>
+    </div>
+
+    <div class="fb-section">
+      <h4 class="green">Strengths</h4>
+      <ul id="strengths-list"></ul>
+    </div>
+    <div class="fb-section">
+      <h4 class="yellow">Areas to Improve</h4>
+      <ul id="improvements-list"></ul>
+    </div>
+    <div class="fb-section">
+      <h4 class="purple">Example Strong Answer</h4>
+      <div class="ideal-answer" id="ideal-answer"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="nextQuestion()">Next Question</button>
+      <button class="btn btn-outline" onclick="endSession()">End Session</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let category = "behavioral";
+  let questionCount = 0;
+  let askedQuestions = [];
+  let currentQuestion = "";
+
+  const BADGE_LABELS = {
+    behavioral: "Behavioral",
+    technical: "Technical",
+    role: "Role-Specific",
+  };
+
+  function selectCat(btn) {
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    category = btn.dataset.cat;
+  }
+
+  async function startSession() {
+    document.getElementById("home").style.display = "none";
+    document.getElementById("session").style.display = "block";
+    document.getElementById("cat-badge").textContent = BADGE_LABELS[category];
+    questionCount = 0;
+    askedQuestions = [];
+    await loadQuestion();
+  }
+
+  async function loadQuestion() {
+    questionCount++;
+    document.getElementById("q-count").textContent = `Question ${questionCount}`;
+    const box = document.getElementById("question-box");
+    box.textContent = "Loading question…";
+    box.classList.add("loading");
+    document.getElementById("answer").value = "";
+    document.getElementById("submit-btn").disabled = true;
+    document.getElementById("feedback").style.display = "none";
+    showError("session-error", "");
+
+    try {
+      const res = await fetch("/api/question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, history: askedQuestions }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      currentQuestion = data.question;
+      askedQuestions.push(currentQuestion);
+      box.textContent = currentQuestion;
+      box.classList.remove("loading");
+      document.getElementById("submit-btn").disabled = false;
+    } catch (e) {
+      box.textContent = "Failed to load question.";
+      showError("session-error", e.message);
+    }
+  }
+
+  async function submitAnswer() {
+    const answer = document.getElementById("answer").value.trim();
+    if (!answer) return;
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Evaluating…';
+    showError("session-error", "");
+
+    try {
+      const res = await fetch("/api/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, question: currentQuestion, answer }),
+      });
+      const fb = await res.json();
+      if (fb.error) throw new Error(fb.error);
+      showFeedback(fb);
+    } catch (e) {
+      showError("session-error", e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Submit Answer";
+    }
+  }
+
+  function showFeedback(fb) {
+    const score = fb.score || 0;
+    const circle = document.getElementById("score-circle");
+    circle.textContent = score;
+    circle.style.background = score >= 8
+      ? "rgba(52,211,153,.2)" : score >= 5
+      ? "rgba(251,191,36,.2)"
+      : "rgba(248,113,113,.2)";
+    circle.style.color = score >= 8
+      ? "var(--green)" : score >= 5
+      ? "var(--yellow)"
+      : "var(--red)";
+
+    renderList("strengths-list", fb.strengths || []);
+    renderList("improvements-list", fb.improvements || []);
+    document.getElementById("ideal-answer").textContent = fb.idealAnswer || "";
+    document.getElementById("feedback").style.display = "block";
+    document.getElementById("submit-btn").style.display = "none";
+  }
+
+  function renderList(id, items) {
+    const ul = document.getElementById(id);
+    ul.innerHTML = items.map(i => `<li>${i}</li>`).join("");
+  }
+
+  async function nextQuestion() {
+    document.getElementById("submit-btn").style.display = "block";
+    await loadQuestion();
+  }
+
+  function endSession() {
+    document.getElementById("session").style.display = "none";
+    document.getElementById("home").style.display = "block";
+    document.getElementById("feedback").style.display = "none";
+    document.getElementById("submit-btn").style.display = "block";
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = msg ? "block" : "none";
+  }
+
+  // Enable submit on typing
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("answer").addEventListener("input", function () {
+      const btn = document.getElementById("submit-btn");
+      if (!btn.disabled || btn.textContent === "Submit Answer") {
+        btn.disabled = !this.value.trim();
+      }
+    });
+  });
+</script>
+</body>
+</html>
