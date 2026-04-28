@@ -2,11 +2,13 @@
 import http.server
 import json
 import os
-import shutil
-import subprocess
 from pathlib import Path
 
-PORT = 8080
+import anthropic
+
+PORT = int(os.environ.get("PORT", 8080))
+
+client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 SYSTEM_PROMPTS = {
     "behavioral": (
@@ -44,32 +46,14 @@ QUESTION_PROMPTS = {
 }
 
 
-def find_claude():
-    claude = shutil.which("claude")
-    if claude:
-        return claude
-    candidates = [
-        "/opt/homebrew/bin/claude",
-        "/usr/local/bin/claude",
-        str(Path.home() / ".local/bin/claude"),
-    ]
-    for c in candidates:
-        if os.path.isfile(c):
-            return c
-    raise RuntimeError("claude CLI not found. Make sure `claude` is in your PATH.")
-
-
 def call_claude(system: str, user: str) -> str:
-    claude_bin = find_claude()
-    prompt = f"{system}\n\n{user}"
-    result = subprocess.run(
-        [claude_bin, "-p", prompt],
-        capture_output=True, text=True, timeout=60,
+    response = client.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=1024,
+        system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+        messages=[{"role": "user", "content": user}],
     )
-    if result.returncode != 0:
-        err = result.stderr.strip() or result.stdout.strip() or "claude CLI returned non-zero exit code"
-        raise RuntimeError(err)
-    return result.stdout.strip()
+    return next(b.text for b in response.content if b.type == "text")
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
